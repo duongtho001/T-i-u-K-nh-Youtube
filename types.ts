@@ -1,4 +1,3 @@
-
 export interface Chapter {
   timestamp: string;
   title: string;
@@ -11,4 +10,19 @@ export interface OptimizedContent {
   hashtags: string[];
   chapters: Chapter[];
   cta: string;
+  shortsTitles: string[];
+}
+
+export enum Tone {
+  Default = 'Mặc định',
+  Friendly = 'Thân thiện',
+  Professional = 'Chuyên nghiệp',
+  Humorous = 'Hài hước',
+}
+
+export interface Settings {
+  tone: Tone;
+  includeEmojis: boolean;
+  channelName: string;
+  videoDuration: string;
 }

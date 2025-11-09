@@ -7,17 +7,25 @@ interface OutputDisplayProps {
 }
 
 const OutputDisplay: React.FC<OutputDisplayProps> = ({ content }) => {
-  const { titles, description, tags, hashtags, chapters, cta } = content;
+  const { titles, shortsTitles, description, tags, hashtags, chapters, cta } = content;
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold text-gray-300">Kết quả Tối ưu</h2>
       
-      <OutputBlock title="Tiêu đề đề xuất" isList>
+      <OutputBlock title="Tiêu đề đề xuất (Video dài)" isList>
         {titles.map((title, index) => (
           <li key={index} className="mb-1">{title}</li>
         ))}
       </OutputBlock>
+
+      {shortsTitles && shortsTitles.length > 0 && (
+        <OutputBlock title="Tiêu đề đề xuất (Shorts)" isList>
+          {shortsTitles.map((title, index) => (
+            <li key={index} className="mb-1">{title}</li>
+          ))}
+        </OutputBlock>
+      )}
 
       <OutputBlock title="Mô tả đề xuất">
         <p className="whitespace-pre-wrap">{description}</p>

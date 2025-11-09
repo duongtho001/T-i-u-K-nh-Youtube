@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { OptimizedContent } from '../types';
+import { OptimizedContent, Settings, Tone } from '../types';
 import { getApiKeys, getCurrentApiKeyIndex, saveCurrentApiKeyIndex } from './apiKeys';
 
 const responseSchema = {
@@ -8,7 +8,7 @@ const responseSchema = {
     titles: {
       type: Type.ARRAY,
       items: { type: Type.STRING },
-      description: "Array of 3-5 SEO-optimized title suggestions in the same language as the input."
+      description: "Array of 3-5 SEO-optimized title suggestions for a standard long-form video, in the same language as the input."
     },
     description: {
       type: Type.STRING,
@@ -35,18 +35,38 @@ const responseSchema = {
       },
       description: "Array of video chapters with timestamps and titles. If no timestamps are found, this should be an empty array."
     },
+    shortsTitles: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+        description: "Array of 2-3 short, punchy title suggestions optimized for YouTube Shorts."
+    },
     cta: {
       type: Type.STRING,
       description: "A subtle call-to-action suggestion."
     }
   },
-  required: ["titles", "description", "tags", "hashtags", "chapters", "cta"]
+  required: ["titles", "description", "tags", "hashtags", "chapters", "shortsTitles", "cta"]
 };
 
-const getPrompt = (text: string): string => {
+const getPrompt = (text: string, settings: Settings): string => {
   if (!text.trim()) {
     return `The user provided no input. Please generate a placeholder template for a standard YouTube video (e.g., vlog or tutorial) in Vietnamese, following the required JSON schema. For example, the description should guide the user on what to fill in.`;
   }
+
+  const toneInstruction = settings.tone !== Tone.Default 
+    ? `- **Tone of Voice:** Adopt a "${settings.tone}" tone.`
+    : '';
+  
+  const emojiInstruction = `- **Emojis:** ${settings.includeEmojis ? 'Strategically include 1-3 relevant emojis to enhance engagement, but do not overdo it.' : 'Do not include any emojis.'}`;
+
+  const channelNameInstruction = settings.channelName.trim()
+    ? `- **Channel Branding:** The user's channel name is "${settings.channelName}". You MUST include variations of this name as high-priority tags and weave it naturally into the description for branding.`
+    : '';
+
+  const videoDurationInstruction = settings.videoDuration.trim()
+    ? `- **Video Duration:** The total length of the video is "${settings.videoDuration}". When creating chapters, ensure the timestamps are logical within this duration and do not exceed it. If the input text suggests a structure but lacks specific timestamps, use your judgment to distribute chapters appropriately throughout the video's length.`
+    : '';
+
   return `
 You are an expert YouTube content optimization assistant. Your task is to take the user-provided text and transform it into a complete, ready-to-use package for a YouTube video.
 
@@ -59,22 +79,28 @@ ${text}
 1.  **Language:** Strictly respond in the same language as the input text. If the input is Vietnamese, your entire JSON output must be in Vietnamese.
 2.  **Analyze and Generate:** Based on the input text, generate all required components.
 3.  **Summarize:** First, understand the main topic of the input.
-4.  **Titles:** Create 3-5 engaging, search-optimized titles.
-5.  **Description:** Write a coherent, natural-sounding description. Place primary keywords in the first 1-2 sentences. Do not stuff keywords.
-6.  **Tags:** Generate a comma-separated list of relevant lowercase tags.
-7.  **Hashtags:** Suggest 8-12 relevant hashtags.
-8.  **Chapters:** This is crucial. If timestamps (e.g., 0:00, 1:23, 10:45) are present, extract them and create a concise, relevant title for each chapter by analyzing the surrounding text. The first chapter must be "00:00 Intro". If no timestamps exist, return an empty array for chapters.
-9.  **Call to Action (CTA):** Provide a subtle, effective CTA.
-10. **Placeholders:** If information like links, names, or codes is missing, use placeholders like [link], [tên sản phẩm], [mã giảm giá].
-11. **Rules:**
+4.  **Titles (Long Video):** Create 3-5 engaging, search-optimized titles.
+5.  **Titles (Shorts):** Generate 2-3 separate, short, and punchy titles (under 60 characters) specifically optimized for YouTube Shorts.
+6.  **Description:** Write a coherent, natural-sounding description. Place primary keywords in the first 1-2 sentences. Do not stuff keywords.
+7.  **Tags:** Generate a comma-separated list of relevant lowercase tags.
+8.  **Hashtags:** Suggest 8-12 relevant hashtags.
+9.  **Chapters:** This is crucial. If timestamps (e.g., 0:00, 1:23, 10:45) are present, extract them and create a concise, relevant title for each chapter by analyzing the surrounding text. The first chapter must start at "00:00". If no timestamps exist, return an empty array for chapters.
+10. **Call to Action (CTA):** Provide a subtle, effective CTA.
+11. **Style Guidelines:**
+    ${toneInstruction}
+    ${emojiInstruction}
+    ${channelNameInstruction}
+    ${videoDurationInstruction}
+12. **Placeholders:** If information like links, names, or codes is missing, use placeholders like [link], [tên sản phẩm], [mã giảm giá].
+13. **Rules:**
     - Do not use clickbait or misleading language.
     - Do not invent information.
     - Correct basic typos and grammar in the input before processing.
-12. **Output Format:** You MUST return your response as a single JSON object matching the provided schema. Do not add any text, markdown formatting, or explanations before or after the JSON object.
+14. **Output Format:** You MUST return your response as a single JSON object matching the provided schema. Do not add any text, markdown formatting, or explanations before or after the JSON object.
 `;
 };
 
-export const optimizeYouTubeContent = async (text: string): Promise<OptimizedContent> => {
+export const optimizeYouTubeContent = async (text: string, settings: Settings): Promise<OptimizedContent> => {
     const keys = getApiKeys();
     if (keys.length === 0) {
         throw new Error("Vui lòng thêm API key của bạn trong phần Cài đặt.");
@@ -90,7 +116,7 @@ export const optimizeYouTubeContent = async (text: string): Promise<OptimizedCon
         
         try {
             const ai = new GoogleGenAI({ apiKey: currentKey });
-            const prompt = getPrompt(text);
+            const prompt = getPrompt(text, settings);
 
             const response = await ai.models.generateContent({
                 model: "gemini-2.5-flash",

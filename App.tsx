@@ -1,12 +1,14 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { optimizeYouTubeContent } from './services/geminiService';
-import { OptimizedContent } from './types';
+import { OptimizedContent, Settings, Tone } from './types';
 import InputArea from './components/InputArea';
 import OutputDisplay from './components/OutputDisplay';
 import Loader from './components/Loader';
 import ErrorDisplay from './components/ErrorDisplay';
 import SettingsModal from './components/SettingsModal';
 import { getApiKeys } from './services/apiKeys';
+import { getSettings, saveSettings } from './services/settings';
+import SettingsPanel from './components/SettingsPanel';
 
 const App: React.FC = () => {
   const [inputText, setInputText] = useState<string>('');
@@ -15,6 +17,8 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [hasApiKeys, setHasApiKeys] = useState(false);
+  const [settings, setSettings] = useState<Settings>(getSettings());
+
 
   const checkApiKeys = useCallback(() => {
     const keys = getApiKeys();
@@ -23,8 +27,16 @@ const App: React.FC = () => {
 
   useEffect(() => {
     checkApiKeys();
+    // Settings are loaded directly into state initial value
   }, [checkApiKeys]);
 
+  const handleSettingsChange = useCallback((change: Partial<Settings>) => {
+    setSettings(prevSettings => {
+      const newSettings = { ...prevSettings, ...change };
+      saveSettings(newSettings);
+      return newSettings;
+    });
+  }, []);
 
   const handleOptimize = useCallback(async () => {
     if (!hasApiKeys) {
@@ -37,7 +49,7 @@ const App: React.FC = () => {
     setOptimizedContent(null);
 
     try {
-      const result = await optimizeYouTubeContent(inputText);
+      const result = await optimizeYouTubeContent(inputText, settings);
       setOptimizedContent(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi không xác định. Vui lòng kiểm tra API key và thử lại.');
@@ -45,7 +57,11 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [inputText, hasApiKeys]);
+  }, [inputText, hasApiKeys, settings]);
+  
+  const handleSettingsSave = useCallback(() => {
+    checkApiKeys();
+  }, [checkApiKeys]);
 
   const Header = () => (
     <div className="text-center p-4 md:p-6 border-b border-gray-700 relative">
@@ -69,18 +85,18 @@ const App: React.FC = () => {
       <p className="text-gray-400 mt-2">
         Dán bản ghi, ghi chú hoặc mô tả cũ để nhận tối ưu hóa từ AI.
       </p>
+       <div className="mt-4 text-gray-400 text-sm space-y-2">
+        <p>App của Thọ - 0934415387</p>
+        <a href="https://zalo.me/g/sgkzgk550" target="_blank" rel="noopener noreferrer" className="inline-block px-4 py-1.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors text-xs font-semibold tracking-wide">
+          Tham Gia Nhóm Zalo tạo App
+        </a>
+      </div>
     </div>
   );
 
   const Footer = () => (
-    <footer className="text-center p-4 mt-8 text-gray-500 text-sm space-y-2">
-        <p>App của Thọ - 0934415387</p>
-        <p>
-            <a href="https://zalo.me/g/sgkzgk550" target="_blank" rel="noopener noreferrer" className="hover:text-red-400 transition-colors">
-                Tham Gia Nhóm Zalo tạo App
-            </a>
-        </p>
-        <p>Cung cấp bởi Gemini API</p>
+    <footer className="text-center p-4 mt-8 text-gray-500 text-sm">
+        <p>Bản quyền của Đường Thọ</p>
     </footer>
   );
 
@@ -89,13 +105,19 @@ const App: React.FC = () => {
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         <Header />
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 lg:gap-8">
-          <InputArea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onOptimize={handleOptimize}
-            isLoading={isLoading}
-            hasApiKeys={hasApiKeys}
-          />
+          <div className="flex flex-col gap-6">
+            <SettingsPanel
+              settings={settings}
+              onSettingChange={handleSettingsChange}
+            />
+            <InputArea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onOptimize={handleOptimize}
+              isLoading={isLoading}
+              hasApiKeys={hasApiKeys}
+            />
+          </div>
           <div className="mt-8 lg:mt-0">
             {isLoading && <Loader />}
             {error && <ErrorDisplay message={error} />}
@@ -106,7 +128,7 @@ const App: React.FC = () => {
                     {!hasApiKeys ? (
                         <>
                             <p className="text-yellow-400 font-semibold">Vui lòng thiết lập API Key của bạn.</p>
-                            <button onClick={() => setIsSettingsOpen(true)} className="mt-4 text-sm text-red-400 hover:underline">Mở Cài đặt</button>
+                            <button onClick={() => setIsSettingsOpen(true)} className="mt-4 text-sm text-red-400 hover:underline">Mở Cài đặt API Key</button>
                         </>
                     ) : (
                         <p className="text-gray-500">Nội dung được tối ưu sẽ xuất hiện ở đây.</p>
@@ -121,7 +143,7 @@ const App: React.FC = () => {
        <SettingsModal 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)}
-        onSave={checkApiKeys}
+        onSave={handleSettingsSave}
       />
     </div>
   );

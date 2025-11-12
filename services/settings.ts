@@ -7,6 +7,7 @@ const defaultSettings: Settings = {
   includeEmojis: true,
   channelName: '',
   videoDuration: '',
+  outputLanguage: 'Auto',
 };
 
 export function getSettings(): Settings {

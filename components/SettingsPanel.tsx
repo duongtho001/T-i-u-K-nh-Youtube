@@ -6,10 +6,33 @@ interface SettingsPanelProps {
     onSettingChange: (change: Partial<Settings>) => void;
 }
 
+const languageOptions = [
+    { value: 'Auto', label: 'Tự động (theo nội dung vào)' },
+    { value: 'Vietnamese', label: 'Tiếng Việt' },
+    { value: 'English', label: 'Tiếng Anh' },
+    { value: 'Japanese', label: 'Tiếng Nhật' },
+    { value: 'Korean', label: 'Tiếng Hàn' },
+];
+
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingChange }) => {
     return (
         <div className="bg-gray-800/70 border border-gray-700 rounded-lg p-4 space-y-6">
             <h2 className="text-xl font-semibold text-gray-300">Tùy chỉnh</h2>
+
+            {/* Language Setting */}
+            <div>
+                <label htmlFor="outputLanguage" className="text-gray-300 block mb-2 text-sm font-medium">Ngôn ngữ đầu ra</label>
+                <select
+                    id="outputLanguage"
+                    value={settings.outputLanguage}
+                    onChange={(e) => onSettingChange({ outputLanguage: e.target.value })}
+                    className="w-full p-2.5 bg-gray-900 border border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:outline-none text-sm"
+                >
+                    {languageOptions.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                </select>
+            </div>
 
             {/* Channel and Duration Inputs */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

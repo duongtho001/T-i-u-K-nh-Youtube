@@ -53,6 +53,10 @@ const getPrompt = (text: string, settings: Settings): string => {
     return `The user provided no input. Please generate a placeholder template for a standard YouTube video (e.g., vlog or tutorial) in Vietnamese, following the required JSON schema. For example, the description should guide the user on what to fill in.`;
   }
 
+  const languageInstruction = settings.outputLanguage === 'Auto'
+    ? `1.  **Language:** Strictly respond in the same language as the input text. If the input is Vietnamese, your entire JSON output must be in Vietnamese.`
+    : `1.  **Language:** Strictly respond in ${settings.outputLanguage}. Your entire JSON output must be in ${settings.outputLanguage}, regardless of the input language.`;
+
   const toneInstruction = settings.tone !== Tone.Default 
     ? `- **Tone of Voice:** Adopt a "${settings.tone}" tone.`
     : '';
@@ -76,7 +80,7 @@ ${text}
 """
 
 **Instructions:**
-1.  **Language:** Strictly respond in the same language as the input text. If the input is Vietnamese, your entire JSON output must be in Vietnamese.
+${languageInstruction}
 2.  **Analyze and Generate:** Based on the input text, generate all required components.
 3.  **Summarize:** First, understand the main topic of the input.
 4.  **Titles (Long Video):** Create 3-5 engaging, search-optimized titles.

@@ -25,4 +25,13 @@ export interface Settings {
   includeEmojis: boolean;
   channelName: string;
   videoDuration: string;
+  outputLanguage: string;
+}
+
+export interface HistoryItem {
+  id: string;
+  timestamp: number;
+  inputText: string;
+  result: OptimizedContent;
+  settings: Settings;
 }

@@ -12,6 +12,9 @@ const languageOptions = [
     { value: 'English', label: 'Tiếng Anh' },
     { value: 'Japanese', label: 'Tiếng Nhật' },
     { value: 'Korean', label: 'Tiếng Hàn' },
+    { value: 'Portuguese', label: 'Tiếng Bồ Đào Nha' },
+    { value: 'Spanish', label: 'Tiếng Tây Ban Nha' },
+    { value: 'Chinese', label: 'Tiếng Trung' },
 ];
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingChange }) => {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { OptimizedContent } from '../types';
 import OutputBlock from './OutputBlock';
-import { RefreshIcon, SaveIcon, CheckIcon } from './Icons';
+import { SaveIcon, CheckIcon } from './Icons';
 import CopyableListItem from './CopyableListItem';
 
 interface OutputDisplayProps {
@@ -37,7 +37,6 @@ const OutputDisplay: React.FC<OutputDisplayProps> = ({ content, onRegenerate, on
         aria-label="Tạo mới kết quả"
         title="Tạo mới kết quả với cùng nội dung và cài đặt"
       >
-        <RefreshIcon className="w-5 h-5 mr-2" />
         Tạo mới
       </button>
 
